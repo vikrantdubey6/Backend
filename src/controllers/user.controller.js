@@ -22,7 +22,9 @@ const registerUser = asyncHandler( async (req, res) => {
 
 
   const {fullname, email, username, password}=  req.body
-    console.log("email", email)
+    console.log("fullname", fullname)
+    // console.log("email", email)
+    console.log("username", username)
 
 
     // if (fullname == '') {
@@ -43,22 +45,28 @@ const registerUser = asyncHandler( async (req, res) => {
         throw new ApiError(409, "user with email and username is already existed")
     }
 
-   const avatarLocalPath = req.files?.avatar[0]?.path
-   const coverImageLocalPath = req.files?.coverImage[0]?.path
+   const avatarLocalPath = req.files?.avatar[0]?.path 
+   const coverImageLocalPath = req.files?.coverImage[0]?.path 
 
-if (!avatarLocalPath) {
-    throw new ApiError(400, "Avataar file is required")
-} 
+   if (!avatarLocalPath) {
+       throw new ApiError(400, "Avataar file is required")
+    } 
+    console.log('url of the avatar',avatarLocalPath )
+
+console.log("email", email)
 
 const avatar = await uploadOnCloudinary(avatarLocalPath)
 const coverImage = await uploadOnCloudinary(coverImageLocalPath)
 
 if(!avatar){
+    console.log("avatar not found", avatar)
     throw new ApiError(400, "All field are required")
 }
 
 
- const user = await User.create({ fullname, 
+
+ const user = await User.create({ 
+              fullname, 
               avatar: avatar.url,
               coverImage: coverImage?.url || "",
               email, 
@@ -80,10 +88,6 @@ const createdUser = await User.findById(user._id).select(`
 
         new ApiResponse(200, createdUser, "User registered Sucessfully!!")
     )
-
-
-
-
 
 }  )
 
