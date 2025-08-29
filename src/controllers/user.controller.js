@@ -3,6 +3,8 @@ import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 const registerUser = asyncHandler(async (req, res) => {
   // details from frontend
@@ -87,16 +89,25 @@ const registerUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, createdUser, "User registered Sucessfully!!"));
 });
 
-const generateAccessAndRefreshToken = async (userId) => {
+const generateAccessAndRefreshToken = async(userId) => {
   try {
     const user = await User.findById(userId);
-    const accessToken = user.generateAccessToken();
-    const refreshToken = user.generateRefreshToken();
+    // console.log("user ID", userId)
+    // console.log("user found", user.username)
+    const accessToken =  user.generateAccessToken();
 
-    user.refreshToken = refreshToken;
+    const refreshToken =  user.generateRefreshToken();
+    // console.log("user ID", userId)
+
+    // console.log("error is not here")
+
+    user.refreshToken = refreshToken
     await user.save({ validateBeforeSave: false });
-    return { accessToken, refreshToken };
+
+    return {accessToken, refreshToken}
+
   } catch (error) {
+    console.log("error is here")
     throw new ApiError(
       500,
       "something went wrong while generating Access and refresh"
@@ -114,11 +125,11 @@ const loginUser = asyncHandler(async (req, res) => {
   // send res (successfully login)
 
   const { username, email, password } = req.body;
-
-  if (!username || !email) {
+  
+  if (!username && !email) {
     throw new ApiError(400, "username OR email is required");
   }
-
+  
   const user = await User.findOne({
     $or: [{ username }, { email }],
   });
@@ -130,11 +141,11 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Invalid password");
   }
 
-  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
-    user._id
-  );
+  // console.log("this is working 1")
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id)
+  // console.log("this is working 2")
 
-  const loggedInUser = await User.findById(User._id).select(
+  const loginUser = await User.findById(User._id).select(
     "-password -refreshToken"
   );
 
@@ -151,7 +162,7 @@ const loginUser = asyncHandler(async (req, res) => {
       new ApiResponse(
         200,
         {
-          user: loggedInUser,
+          user: loginUser,
           accessToken,
           refreshToken,
         },
@@ -185,5 +196,14 @@ const logoutUser = asyncHandler(async (req, res) => {
   )
 
 });
+
+
+
+
+
+
+
+
+
 
 export { registerUser, loginUser, logoutUser };
