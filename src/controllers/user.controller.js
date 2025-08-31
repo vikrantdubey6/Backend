@@ -223,7 +223,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
     const options = {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === "production",
     };
 
     const { accessToken, newrefreshToken } =
@@ -231,8 +231,8 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
     return res
       .status(200)
-      .cookie("accessToken", accessToken)
-      .cookie("refreshToken", newrefreshToken)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", newrefreshToken,options)
       .json(
         new ApiResponse(
           200,
@@ -266,9 +266,11 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
   user.password = newPassword;
   await user.save({ validateBeforeSave: false });
 
+  // console.log("new password is", user.password)
   return res
     .status(200)
     .json(new ApiResponse(200, {}, "Password Changed successfully"));
+
 });
 
 const getCurrentUser = asyncHandler(async (req, res) => {
@@ -298,7 +300,6 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      200,
       new ApiResponse(200, user, "Account details updated successfully")
     );
 });
