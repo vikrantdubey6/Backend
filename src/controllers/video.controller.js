@@ -228,11 +228,98 @@ const updateVideo = asyncHandler(async (req, res) => {
 const deleteVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   //TODO: delete video
+
+  if(!videoId){
+    throw new ApiError(400, "videoId is missing")
+  }
+
+  if(!isValidObjectId(ObjectId)){
+    throw new ApiError(400, "Invalid user to delete")
+  }
+
+  const video  = await Video.findById(videoId)
+
+  if(!video){
+    throw new ApiError(200, "Video does not exist")
+  }
+
+  if(video.owner.toString()!== req.user._id.toString()){
+    throw new ApiError(403, "you are not authorized to delete this video")
+  }
+
+ const deleted = await Video.findByIdAndDelete(videoId)
+
+
+ return res
+ .status(200)
+ .json(
+    new ApiResponse(200, deleted, "video is deleted successfully")
+ )
+
 });
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
+   if (!videoId?.trim()) {
+        throw new ApiError(400,"videoId is missing");
+        
+    }
+
+    if (!isValidObjectId(videoId)) {
+        throw new ApiError(400, "Invalid videoId format");
+    }
+     
+   const video =  await Video.findById(videoId)
+
+   if (!video) {
+       throw new ApiError(404,"Video does not exist")
+   }
+
+   if (video.owner.toString() !== req.user?._id.toString()) {
+      throw new ApiError(403, "You are not authorized to toggle publish status");
+   }
+
+
+   video.isPublished = !video.isPublished
+   await video.save({validateBeforeSave:false})
+
+   return res.status(200).json(new ApiResponse(
+    200,
+    video,
+    "Publish status is toggled successfully"
+   ))
+
+
 });
+
+const viewIncrement = asyncHandler(async(req, res) => {
+
+    const {videoId} = req.params;
+
+    if(!videoId || !isValidObjectId(videoId) ){
+        throw new ApiError (400, "invalid Video Id")
+    }
+
+    const video = await Video.findByIdAndUpdate(
+        videoId,
+        {
+            $inc: {views: 1}
+        },
+        {
+            new: true
+        }
+    );
+    if(!video){
+        throw new ApiError(404, "Video not found")
+    }
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, video , "view count updated")
+    )
+})
+
 
 export {
   getAllVideos,
@@ -241,4 +328,5 @@ export {
   updateVideo,
   deleteVideo,
   togglePublishStatus,
+  viewIncrement
 };
