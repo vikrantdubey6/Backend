@@ -100,7 +100,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
            const sortOrder = sortType === "asc" ? 1 : -1;
 
         const matchStage = {
-            owner: new mongoose.Types.ObjectId(userId),
+            owner: mongoose.Types.ObjectId(userId),
             title: {$regex: query, $options: "i"}
         }
 
@@ -110,8 +110,64 @@ const getAllVideos = asyncHandler(async (req, res) => {
             },
 
             {
-                
+                $lookup: {
+                    from: "users",
+                    localField: "owner",
+                    foreignField: "_id",
+                    as: "owner"
+                }
+            },
+
+            { 
+                $unwind: "$owner" 
+            },
+
+            {
+                $project: 
+                {
+
+                title: 1,
+                description: 1,
+                createdAt: 1,
+                views: 1,
+                isPublished: 1,
+                thumbnail: 1,
+                duration: 1,
+                "owner._id": 1,
+                "owner.username": 1,
+                "owner.avatar": 1
+                }
+
+            },
+            
+            { 
+                $sort: { [sortBy]: sortOrder } 
+
+            },
+            {
+
+                $facet:
+                {
+                    data: 
+                    [
+                        {
+                            $skip: skip
+                        },
+                        {
+                            $limit: parseInt(limit)
+                        }
+                    ],
+                    totalCount: [
+
+                        {
+                            $count: "count"
+                        }
+                        
+                    ]
+                }
+
             }
+
         ]
 
 })
