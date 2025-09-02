@@ -144,7 +144,6 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
 
     if (userId.toString() !== subscriberId.toString()) {
         throw new ApiError(403, "Access denied: Not your channel");
-
     }
 
     const subscribed = await Subscription.aggregate([{
@@ -152,6 +151,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
                 subscriber: new mongoose.Types.ObjectId(subscriberId),
             },
     },
+
     {
         $lookup:{
             from : "users",
@@ -160,9 +160,11 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
             as:"subscribedDetails"
          }
     },
+
     {
         $unwind: "$subscribedDetails",
     },
+
     {
         $project: {
                 _id: 0,
@@ -172,7 +174,6 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
                 avatar: "$subscribedDetails.avatar",
             }, 
     }
-
 ])
    
    if (!subscribed?.length) {
