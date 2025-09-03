@@ -111,17 +111,87 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
         commentlike,
         "Comment is liked successfully"
     ))
-    
+
 })
 
 const toggleTweetLike = asyncHandler(async (req, res) => {
     const {tweetId} = req.params
     //TODO: toggle like on tweet
+    if (!tweetId?.trim()) {
+        throw new ApiError(400,"tweetId is missing");
+        
+    }
+
+    if (!isValidObjectId(tweetId)) {
+        throw new ApiError(400, "Invalid tweetId format");
+    }
+    
+    const userId = req.user?._id
+    if (!userId) {
+        throw new ApiError(400,"userId is required")
+    }
+
+    const existLikedtweet = await Like.findOne({
+        tweet:tweetId,
+        likedBy: userId
+    })
+
+    if (existLikedtweet) {
+        await Like.findByIdAndDelete(existLikedtweet._id)
+        return res.status(200).json(new ApiResponse(
+            200,
+            {},
+            "Tweet unliked successfully"
+        ))
+
+    }
+
+    const tweetlike  = await Like.create({
+        tweet: tweetId,
+        likedBy:userId,
+        
+    })
+
+    if (!tweetlike) {
+        throw new ApiError(500,"Failed to like");
+        
+    }
+     
+     return res.status(200).json(new ApiResponse(
+        200,
+        tweetlike,
+        "Tweet is liked successfully"
+    ))
+
+    
+
 }
 )
 
 const getLikedVideos = asyncHandler(async (req, res) => {
     //TODO: get all liked videos
+     const userId = req.user?._id;
+
+    if (!userId) {
+        throw new ApiError(401, "Unauthorized");
+    }
+
+    const likedVideoDocs = await Like.find({
+        likedBy: userId,
+        video: { $exists: true, $ne: null }
+    }).populate("video");
+
+    const likedVideos = likedVideoDocs
+        .map((like) => like.video)
+        .filter(Boolean); 
+
+    return res.status(200).json(new ApiResponse(
+        200,
+        likedVideos,
+        "Liked videos fetched successfully"
+    ));
+
+
 })
 
 export {
