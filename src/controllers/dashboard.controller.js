@@ -31,7 +31,8 @@ const getChannelStats = asyncHandler(async (req, res) => {
 
     const viewStats = await Video.aggregate([
         {
-            $match: { owner: new mongoose.Types.ObjectId(channelId) }
+            // $match: { owner: new mongoose.Types.ObjectId(channelId) }
+            $match: { owner:  mongoose.Types.ObjectId(channelId) }
         },
         {
             $group: {
